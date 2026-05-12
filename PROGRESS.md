@@ -1,15 +1,23 @@
 # Progress Log
 
-**Last updated**: 2026-05-12
+**Last updated**: 2026-05-12 (v3 PRD)
 
 ---
 
 ## What We've Done
 
-### Requirements Gathering — v2 COMPLETE
-PRD updated to v2.0 at `doc/1_RequirementDoc.md` (quality score: 96/100). v2 was driven by the May 11 meeting notes in `doc/MeetingNotes`.
+### Requirements Gathering — v3 COMPLETE
+PRD updated to v3.0 at `doc/1_RequirementDoc.md` (quality score: 97/100). v3 folds in the May 12 meeting amendments on top of v2 (which was driven by the May 11 meeting notes).
 
-**Key v2 changes from v1.1:**
+**Key v3 changes from v2.0:**
+- **Client/server separation** elevated to a first-class architectural constraint — separated codebases, independently shippable clients (web, iPhone, iPad, Android), versioned API contract
+- **Scalability target added**: backend must launch at 100 MAU and scale to **10,000 MAU via horizontal scaling alone** (no rewrite)
+- New **Scalability** subsection in Technical Constraints with explicit design implications (stateless app tier, queue-based generation, externalised sessions/images, observability)
+- 3 new scaling-related risks added to Risk Assessment (rewrite avoidance, database bottleneck, queue saturation)
+- New dependency: cloud infrastructure choice must support horizontal scaling from day one — to be decided in high-level design
+- Glossary: added MAU definition
+
+**Key v2 changes from v1.1 (unchanged history):**
 - **Credit model**: weekly login credit removed; replaced by **4 credits/month auto-issued on subscription renewal**, expire at next renewal. Purchased pack credits unchanged (no expiry).
 - **KPIs**: reframed as monthly; primary acquisition metric → **paid subscriptions (100+ in 6 months)**, replacing registrations. Engagement metric → **total credit-pack purchase amount** (replaces conversion rate); monthly notification open rate dropped.
 - **Launch sequence**: Web (Stripe) → iPhone → iPad → Android. Backend shared from day one.

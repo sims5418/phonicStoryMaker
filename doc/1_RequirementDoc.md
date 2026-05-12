@@ -1,9 +1,15 @@
 # Product Requirements Document: phonicStoryMaker
 
-**Version**: 2.0
+**Version**: 3.0
 **Date**: 2026-05-12
 **Author**: Sarah (Product Owner)
-**Quality Score**: 96/100
+**Quality Score**: 97/100
+
+**Changelog (v2.0 → v3.0):**
+- Architecture: client/server separation reinforced as a first-class constraint — single shared backend serves all clients (web, iPhone, iPad, Android); clients are independently shippable
+- New scalability target: backend must launch supporting 100 monthly active users and scale to **10,000 MAU via horizontal scaling alone** (no architectural rewrite, no major refactor)
+- Risk Assessment updated with scaling-related risks
+- Dependencies updated to require infrastructure choices that support horizontal scaling from day one
 
 **Changelog (v1.1 → v2.0):**
 - Credit model: weekly login credit removed; replaced by monthly auto-issued credits on subscription renewal (expire if unused)
@@ -337,6 +343,17 @@ Two complementary layers protect the experience:
 - Image generation: target < 10 seconds per image; total story generation time noted in PRD as a UX risk mitigated by Web Push (parent can leave the app while generating)
 - Page load: < 3 seconds for catalog / word bank views
 
+### Scalability
+- **Launch capacity**: backend must comfortably support **100 monthly active users (MAU)** at Phase 0 launch
+- **Target capacity**: backend must scale to **10,000 MAU** via **horizontal scaling alone** — adding instances, scaling the database tier, and adjusting infrastructure config — without requiring a major code rewrite, schema overhaul, or architectural refactor
+- Design implications (to be detailed in high-level design):
+  - **Stateless application servers** (sessions externalised — JWT or a shared session store)
+  - **Database choice / topology** must support read replicas, connection pooling, and partitioning at the 10k-MAU level
+  - **Async job processing**: long-running story generation must run via a queue / worker pool, not in-request, so web tier can scale independently
+  - **Object storage** for generated images (not local disk), CDN-fronted for read traffic
+  - **Idempotent credit operations** and transactional credit ledger to remain correct under concurrent load
+  - **Observability** (metrics, structured logs, traces) from day one so scale bottlenecks are diagnosable
+
 ### Security & Compliance
 - **COPPA (US)**: Children's data must not be collected directly; parent account holds all data
 - **GDPR-K (EU)**: Parental consent model; data minimisation for child-related content
@@ -346,10 +363,12 @@ Two complementary layers protect the experience:
 - **Report flow**: reported stories must be hidden from all viewers immediately and purged from the database within 30 days
 
 ### Architecture
-- **Separated frontend and backend API** from day one — same backend serves web, iPhone, iPad, Android
+- **Separated client and server codebases** from day one — server code is identical across all clients; clients (web, iPhone, iPad, Android) are independently developed, deployed, and versioned, communicating with the server only through a versioned API
+- A single backend API serves **web, iPhone, iPad, and Android** clients; no client-specific server logic
 - Web-first; mobile-responsive layout for Phase 0
 - **Image generation must be abstracted behind a provider-agnostic interface** in the backend; Imagen 4 is the default implementation, but the system must allow swapping providers (e.g. OpenAI image API, Stable Diffusion, others) without changes to higher-level code
 - LLM provider may be similarly abstracted (TBD in high-level design)
+- Architecture must satisfy the Scalability requirements above (stateless app tier, queue-based generation, externalised storage and sessions) so the 100 → 10,000 MAU growth path requires no rewrite
 
 ### Integration
 - **LLM API**: story text generation + content screening (provider TBD)
@@ -427,6 +446,9 @@ Two complementary layers protect the experience:
 | Subscription churn after free month | Medium | High | Demonstrate value in month 1 via example stories and smooth onboarding |
 | Web Push permission denied → parent misses notifications | Medium | Medium | In-app "story ready" badge as fallback; email fallback considered for Phase 1+ |
 | Stale monthly credits frustrate parents | Low | Medium | UI shows expiry date; consume expirable credits before non-expirable purchased credits |
+| Scaling past launch capacity requires rewrite | Medium | High | Enforce stateless app tier, queued generation, and externalised image/session storage from Phase 0; load-test the 10k-MAU path before Phase 1 |
+| Database becomes scaling bottleneck before 10k MAU | Medium | High | Choose a database with proven horizontal scaling (read replicas, partitioning); include connection pooling and migration tooling in HLD |
+| Generation worker queue saturates during traffic spikes | Medium | Medium | Auto-scaling worker pool; observability/alerts on queue depth; communicate ETA to parent if backlog grows |
 
 ---
 
@@ -441,6 +463,7 @@ Two complementary layers protect the experience:
 - **Apple Developer + Google Play accounts**: required before Phase 2/3
 - **Email service**: required for Phase 1 monthly notification
 - **Web Push infrastructure (VAPID keys, service worker)**: required for Phase 0
+- **Cloud infrastructure choices** must support horizontal scaling from day one: stateless compute (containers / managed app platform), managed database with replica support, object storage + CDN, managed queue/worker service — selection to be made in high-level design
 
 **Known Blockers / TBDs:**
 - Monthly subscription price (**TBD** — needed before billing integration begins)
@@ -464,6 +487,7 @@ Two complementary layers protect the experience:
 - **Purchased Credit**: A credit acquired via a paid pack; does not expire
 - **Word Bank**: Aggregated list of all phonics words encountered across completed stories, organised by Jolly Phonics level
 - **Web Push**: Browser-native push notification mechanism (Web Push API + VAPID + service worker)
+- **MAU (Monthly Active User)**: A parent account that logs into the app at least once within a rolling 30-day window
 
 ### References
 - Jolly Phonics: https://www.jollylearning.co.uk
