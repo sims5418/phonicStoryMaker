@@ -1,9 +1,66 @@
+# May.11
+
+## Notes to for v2 requirements
+A few notes about the requirements
+
+Summary section
+1. Remove login weekly credit, change it to every month when subscription renews, automatically issue some credits. If not used that month, it expires.
+2. Extra credit packs still available for purchase though
+
+Primary KPIs section
+1. Make it clear it is monthly metrics
+2. Change the metric of user registration to paid subscription 100+ parent accounts
+
+Engagement signal section
+1. Remove “monthly notification open rate”
+2. Change “credit purchase conversion rate” to total purchase amount
+
+Add a section to describe the launching platform
+1. First iOS, iPhone, then iPad, then android
+
+User personas section
+1. Child is not an independent user in any version not just version 1
+
+Add safety section
+1. Each time after story generation, let parent review it first, and review and accept it, before add it to the story catalog.
+2. Parent can report the story, so it get unlocked and hide from customers for viewing, will be deleted in 30 days from database
+
+User Stories & Acceptance Criteria -> change story to epic
+
+Story 1
+1. Parent can select a Jolly Phonics level from a defined list -> this will be remembered and be the selected level for the next story, but it will still show the level choosing UI when creating next story
+2. Parent can enter a character name (max 32 characters -> change it to 16 characters
+3. Story and images are generated after submission; a loading state is shown -> not showing loading screen, the user will receive a notification when the story is created.
+
+Story 4
+1. Earn Weekly Credits -> change this to monthly credit is automatically awarded on the renewal date of each month, remove weekly credit mechanism
+2. When credit balance is 0, a prompt to purchase credits is shown on the Create Story tab -> don’t show it it will just be a tab
+
+MVP Scope & Phasing
+1. Add a phase 0: proof of concept phase, which includes
+- Parent account registration & login
+- 2-tab navigation: Create Story, Story Catalog
+- Story creation (4 inputs, random options)
+- Input and output content moderation
+- LLM story text generation
+- Per-sentence image generation (Imagen 4, consistent character style)
+- Monthly subscription model (first month free)
+Remove those from phase 1
+
+Others
+- Send trophy status tonce per month to parent's registered email
+- Imagen 4, what if it is not availbale in the future, what alternatives; need to be switchable
+- if web based can use stripe as payment, 3-5% fee; if use apple, 25-30% fee
+
+## goal
+- productionize
+
+## todo
+- investigate image model
+- investigate phonics system
+
 # Apr.13
 Create stories:
 - Requirement doc
 - High-level design
 - Create project plan
-
-## todo
-- investigate image model
-- investigate phonics system

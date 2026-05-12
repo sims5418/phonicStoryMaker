@@ -1,62 +1,51 @@
 # Progress Log
 
-**Date**: 2026-04-13
+**Last updated**: 2026-05-12
 
 ---
 
 ## What We've Done
 
-### Requirements Gathering (in progress)
-Running an interactive PRD session with the product-requirements skill (Sarah, Product Owner).
+### Requirements Gathering — v2 COMPLETE
+PRD updated to v2.0 at `doc/1_RequirementDoc.md` (quality score: 96/100). v2 was driven by the May 11 meeting notes in `doc/MeetingNotes`.
 
-**Current quality score: 62/100** — not yet at the 90+ threshold needed to generate the PRD.
+**Key v2 changes from v1.1:**
+- **Credit model**: weekly login credit removed; replaced by **4 credits/month auto-issued on subscription renewal**, expire at next renewal. Purchased pack credits unchanged (no expiry).
+- **KPIs**: reframed as monthly; primary acquisition metric → **paid subscriptions (100+ in 6 months)**, replacing registrations. Engagement metric → **total credit-pack purchase amount** (replaces conversion rate); monthly notification open rate dropped.
+- **Launch sequence**: Web (Stripe) → iPhone → iPad → Android. Backend shared from day one.
+- **Safety (new section)**: parent must **review & accept** every story before it enters the catalog; reject = one free regeneration. **Report flow**: immediately hide from all viewers + auto-delete after 30 days (no human moderator queue in v2).
+- **Story creation**: character name max **16 chars** (was 32); **no loading screen** — **Web Push notification** when story is ready; phonics-level chooser UI always shown even though last-used level is pre-selected.
+- **Phasing**: added **Phase 0 (PoC, web only)** — auth, 2 tabs (Create + Catalog), creation, moderation, LLM, Imagen 4 (abstracted), subscription/monthly credits. Phase 0 exit = **~1 month stable in production, no major bugs** (qualitative — to be sharpened in HLD). Word Bank, Trophies, Settings tab, monthly email, credit packs, example stories all move to **Phase 1**.
+- **Image generation**: must be **abstracted behind a provider-agnostic backend interface**; Imagen 4 is default but swappable.
+- **Monthly email**: reads + words + **trophy status** merged into one combined monthly email.
+- **Terminology**: "User Stories" → "Epics". Child is **not** an independent user in *any* version.
 
-#### Requirements captured so far:
-
-**Product concept**
-- A web app where parents and children (ages 3–8) co-create personalized phonics-based stories to support early reading learning.
-- Parent inputs: theme, characters (custom names), basic plotline, and phonics level (reading difficulty).
-- An LLM API generates the story; an image generation API (Imagen 4, TBD) generates one illustration per sentence in consistent cartoon style with character consistency across the story.
-- Phonics words are shown on a preview page before the story, so the child can review them first.
-
-**Feature set discussed**
-- Story generation with custom theme/character/plotline + phonics level selection
-- One image per sentence (cartoon style, consistent characters)
-- Pre-story phonics word list page
-- Parent marks story as "completed"
-- Word library: browse learned words + completion counts
-- PDF export (printable)
-- Multiple child profiles per parent account
-- Credit-based monetization (details TBD)
-- Account/auth system required
-
-**MVP (v1) scope**
-- Story generation only (images TBD — whether images are in v1 needs clarification)
-- Web-based first; mobile app later
-- Frontend/backend separated so backend can be reused for mobile
-
-**Architecture direction**
-- Web frontend + separate backend API
-- LLM via API for story generation
-- Image generation via API (Imagen 4 or similar — needs investigation)
-- Credit-based payment system
-
----
-
-## Open Questions (still needed for PRD)
-
-1. **MVP scope clarification** — Does v1 include per-sentence images, multiple child profiles, and PDF export? Or text-only story generation first?
-2. **Credit system details** — How many credits per story? Credit pack sizes? Free credits on signup?
-3. **Success metrics** — What does success look like in 6 months? (users, stories generated, retention?)
-4. **Child data compliance** — COPPA (US) / GDPR-K (EU) awareness and requirements for the target market?
-5. **Phonics levels** — Specific levels/curriculum to follow (needs research)?
-6. **Image generation** — Confirmed API choice and character consistency approach (needs investigation)?
+**Open decisions captured as TBDs in the PRD:**
+- Monthly subscription price
+- 1-pack and 4-pack credit prices
+- Concrete Phase 0 exit metric thresholds (e.g. generation success rate)
+- Named fallback image provider for the abstraction
 
 ---
 
 ## Next Steps
 
-1. **Answer the 4 open questions above** to push the quality score to 90+
-2. **Generate the PRD** at `doc/1_RequirementDoc.md` once score ≥ 90
-3. **Complete the high-level design** at `doc/highLevelDesign.md`
-4. **Create a project plan**
+1. **High-level design** at `doc/highLevelDesign.md`
+   - Choose tech stack (frontend framework, backend language, DB)
+   - Choose LLM API provider (OpenAI / Anthropic / Google Gemini) — and decide whether to abstract it
+   - Design the **image-provider abstraction interface** (required by v2)
+   - Design data model (users, stories incl. pending-review state, images, credits incl. expirable vs. non-expirable, word bank, report state)
+   - Define API surface for web (Phase 0) reusable by iOS/iPad/Android
+   - Design **Web Push** integration (VAPID keys, service worker)
+   - Set concrete Phase 0 exit thresholds (generation success rate, latency)
+   - **Prototype Imagen 4 character consistency** before architecture is locked
+
+2. **Decide pricing** (monthly subscription fee + 1-pack & 4-pack prices) — needed before billing integration
+
+3. **Identify one fallback image provider** before Phase 0 launch to validate the abstraction
+
+4. **Project plan**
+   - Break Phase 0 → Phase 1 → Phase 2 → Phase 3 into milestones/sprints
+   - Identify dependencies (GCP/Vertex AI, Stripe, Jolly Phonics word lists, email provider, Web Push infra, Apple Developer + Google Play accounts for later phases)
+
+5. **Early prototype** (recommended before Phase 0 implementation): Imagen 4 character consistency via reference image — still a blocker risk
