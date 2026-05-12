@@ -7,7 +7,7 @@
 ## What We've Done
 
 ### Requirements Gathering — v3 COMPLETE
-PRD updated to v3.0 at `doc/1_RequirementDoc.md` (quality score: 97/100). v3 folds in the May 12 meeting amendments on top of v2 (which was driven by the May 11 meeting notes).
+PRD updated to v3.0 at `doc/1_RequirementDoc.md` (quality score: 97/100). v3 folds in the May 12 meeting amendments on top of v2 (which was driven by the May 11 meeting notes). Committed as `dd40d34` and pushed to `origin/main`.
 
 **Key v3 changes from v2.0:**
 - **Client/server separation** elevated to a first-class architectural constraint — separated codebases, independently shippable clients (web, iPhone, iPad, Android), versioned API contract
@@ -38,22 +38,31 @@ PRD updated to v3.0 at `doc/1_RequirementDoc.md` (quality score: 97/100). v3 fol
 
 ## Next Steps
 
-1. **High-level design** at `doc/highLevelDesign.md`
-   - Choose tech stack (frontend framework, backend language, DB)
-   - Choose LLM API provider (OpenAI / Anthropic / Google Gemini) — and decide whether to abstract it
-   - Design the **image-provider abstraction interface** (required by v2)
-   - Design data model (users, stories incl. pending-review state, images, credits incl. expirable vs. non-expirable, word bank, report state)
-   - Define API surface for web (Phase 0) reusable by iOS/iPad/Android
-   - Design **Web Push** integration (VAPID keys, service worker)
-   - Set concrete Phase 0 exit thresholds (generation success rate, latency)
+1. **High-level design** at `doc/highLevelDesign.md` (currently empty — only contains `/todo`)
+   - **Tech stack** (frontend framework, backend language, DB) — DB choice must support horizontal scaling (read replicas, partitioning) per v3
+   - **LLM API provider** (OpenAI / Anthropic / Google Gemini) — and decide whether to abstract it
+   - **Image-provider abstraction interface** (required by v2)
+   - **Scalability architecture (new in v3)**:
+     - Stateless app tier (externalised sessions — JWT or shared store)
+     - Async generation queue + worker pool (so web tier scales independently)
+     - Object storage + CDN for generated images
+     - Cloud platform selection (managed compute, managed DB, managed queue)
+     - Observability stack (metrics, structured logs, traces) from day one
+   - **Client/server split (reinforced in v3)**: define versioned API contract; clients (web, iPhone, iPad, Android) deploy independently
+   - **Data model** (users, stories incl. pending-review state, images, credits incl. expirable vs. non-expirable, word bank, report state)
+   - **API surface** for web (Phase 0) reusable by iOS/iPad/Android
+   - **Web Push** integration (VAPID keys, service worker)
+   - **Phase 0 exit thresholds** — concrete numbers (generation success rate, latency)
    - **Prototype Imagen 4 character consistency** before architecture is locked
 
 2. **Decide pricing** (monthly subscription fee + 1-pack & 4-pack prices) — needed before billing integration
 
 3. **Identify one fallback image provider** before Phase 0 launch to validate the abstraction
 
-4. **Project plan**
+4. **Load-test plan** (new in v3): validate the 100 → 10,000 MAU horizontal-scaling path before Phase 1 launch
+
+5. **Project plan**
    - Break Phase 0 → Phase 1 → Phase 2 → Phase 3 into milestones/sprints
    - Identify dependencies (GCP/Vertex AI, Stripe, Jolly Phonics word lists, email provider, Web Push infra, Apple Developer + Google Play accounts for later phases)
 
-5. **Early prototype** (recommended before Phase 0 implementation): Imagen 4 character consistency via reference image — still a blocker risk
+6. **Early prototype** (recommended before Phase 0 implementation): Imagen 4 character consistency via reference image — still a blocker risk
