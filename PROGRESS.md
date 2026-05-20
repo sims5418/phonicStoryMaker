@@ -1,68 +1,61 @@
 # Progress Log
 
-**Last updated**: 2026-05-12 (v3 PRD)
+**Last updated**: 2026-05-20 (HLD P0 + issues filed)
 
 ---
 
 ## What We've Done
 
-### Requirements Gathering — v3 COMPLETE
-PRD updated to v3.0 at `doc/1_RequirementDoc.md` (quality score: 97/100). v3 folds in the May 12 meeting amendments on top of v2 (which was driven by the May 11 meeting notes). Committed as `dd40d34` and pushed to `origin/main`.
+### High-Level Design — P0 drafted
+`doc/2_HighLevelDesign_P0.md` committed as `e996e4a`. Captures:
+- Functional requirements: story creation, library, parent review
+- Non-functional: LLM text, one image/sentence, poll-based status (push dropped), monthly billing, 4 credits/month
+- Entities: User, StoryConfig (with `pending`/`accepted`/`reported` status), Story, PhonicWords
+- System architecture: Client → LB → Server → Queue → Worker, with separate StoryConfig/User/Story/PhonicWords stores + Blob storage
+- API: `POST /stories/create`, `GET /stories`, `GET /stories/{id}`, `PUT /stories/{id}` (accept/reject)
+- Deep-dive TODO table (5 rows)
 
-**Key v3 changes from v2.0:**
-- **Client/server separation** elevated to a first-class architectural constraint — separated codebases, independently shippable clients (web, iPhone, iPad, Android), versioned API contract
-- **Scalability target added**: backend must launch at 100 MAU and scale to **10,000 MAU via horizontal scaling alone** (no rewrite)
-- New **Scalability** subsection in Technical Constraints with explicit design implications (stateless app tier, queue-based generation, externalised sessions/images, observability)
-- 3 new scaling-related risks added to Risk Assessment (rewrite avoidance, database bottleneck, queue saturation)
-- New dependency: cloud infrastructure choice must support horizontal scaling from day one — to be decided in high-level design
-- Glossary: added MAU definition
+### P0 issue backlog filed on GitHub
+One issue per HLD TODO row, all titled with `[P0]` prefix per May 20 decision:
+- #4 — Story Creation — DB, blob storage, worker, queue
+- #5 — Phonics Word DB — research and populate
+- #6 — Notification — client poll-based status
+- #7 — Payment — provider integration design
+- #8 — Credits — system design
 
-**Key v2 changes from v1.1 (unchanged history):**
-- **Credit model**: weekly login credit removed; replaced by **4 credits/month auto-issued on subscription renewal**, expire at next renewal. Purchased pack credits unchanged (no expiry).
-- **KPIs**: reframed as monthly; primary acquisition metric → **paid subscriptions (100+ in 6 months)**, replacing registrations. Engagement metric → **total credit-pack purchase amount** (replaces conversion rate); monthly notification open rate dropped.
-- **Launch sequence**: Web (Stripe) → iPhone → iPad → Android. Backend shared from day one.
-- **Safety (new section)**: parent must **review & accept** every story before it enters the catalog; reject = one free regeneration. **Report flow**: immediately hide from all viewers + auto-delete after 30 days (no human moderator queue in v2).
-- **Story creation**: character name max **16 chars** (was 32); **no loading screen** — **Web Push notification** when story is ready; phonics-level chooser UI always shown even though last-used level is pre-selected.
-- **Phasing**: added **Phase 0 (PoC, web only)** — auth, 2 tabs (Create + Catalog), creation, moderation, LLM, Imagen 4 (abstracted), subscription/monthly credits. Phase 0 exit = **~1 month stable in production, no major bugs** (qualitative — to be sharpened in HLD). Word Bank, Trophies, Settings tab, monthly email, credit packs, example stories all move to **Phase 1**.
-- **Image generation**: must be **abstracted behind a provider-agnostic backend interface**; Imagen 4 is default but swappable.
-- **Monthly email**: reads + words + **trophy status** merged into one combined monthly email.
-- **Terminology**: "User Stories" → "Epics". Child is **not** an independent user in *any* version.
+### Requirements Gathering — v3 (prior)
+PRD at `doc/1_RequirementDoc.md` (quality 97/100). v3 (commit `dd40d34`) adds:
+- Client/server separation as a first-class constraint (web + iPhone + iPad + Android clients, shared versioned API)
+- Scalability target: launch at 100 MAU, scale to **10,000 MAU via horizontal scaling alone**
+- Stateless app tier, queue-based generation, externalised sessions/images, observability from day one
 
-**Open decisions captured as TBDs in the PRD:**
+v2 (prior, commit `2854319`) introduced: monthly auto-issued credits (4/mo, expire at renewal); paid-subscription KPI; web→iPhone→iPad→Android launch order; parent review + report flow; Phase 0 (PoC, web only); abstracted image provider; "Epics" terminology.
+
+**Open PRD TBDs (still open):**
 - Monthly subscription price
 - 1-pack and 4-pack credit prices
-- Concrete Phase 0 exit metric thresholds (e.g. generation success rate)
-- Named fallback image provider for the abstraction
+- Concrete Phase 0 exit metric thresholds
+- Named fallback image provider
 
 ---
 
 ## Next Steps
 
-1. **High-level design** at `doc/highLevelDesign.md` (currently empty — only contains `/todo`)
-   - **Tech stack** (frontend framework, backend language, DB) — DB choice must support horizontal scaling (read replicas, partitioning) per v3
-   - **LLM API provider** (OpenAI / Anthropic / Google Gemini) — and decide whether to abstract it
-   - **Image-provider abstraction interface** (required by v2)
-   - **Scalability architecture (new in v3)**:
-     - Stateless app tier (externalised sessions — JWT or shared store)
-     - Async generation queue + worker pool (so web tier scales independently)
-     - Object storage + CDN for generated images
-     - Cloud platform selection (managed compute, managed DB, managed queue)
-     - Observability stack (metrics, structured logs, traces) from day one
-   - **Client/server split (reinforced in v3)**: define versioned API contract; clients (web, iPhone, iPad, Android) deploy independently
-   - **Data model** (users, stories incl. pending-review state, images, credits incl. expirable vs. non-expirable, word bank, report state)
-   - **API surface** for web (Phase 0) reusable by iOS/iPad/Android
-   - **Web Push** integration (VAPID keys, service worker)
-   - **Phase 0 exit thresholds** — concrete numbers (generation success rate, latency)
-   - **Prototype Imagen 4 character consistency** before architecture is locked
+1. **Work the P0 issues** (#4–#8) — each is a design task; deliverable is a design doc / decision recorded in the HLD.
 
-2. **Decide pricing** (monthly subscription fee + 1-pack & 4-pack prices) — needed before billing integration
+2. **HLD gaps not in the TODO table** — consider filing follow-up issues for:
+   - Authentication mechanism (session vs JWT; must be stateless-compatible)
+   - Parent review UX + reject → free-regeneration loop (PRD v2 safety section)
+   - Phase 0 exit thresholds (concrete numbers for generation success rate, latency)
+   - Image-provider abstraction interface + named fallback provider
+   - Load-test plan validating 100 → 10,000 MAU horizontal-scaling path
 
-3. **Identify one fallback image provider** before Phase 0 launch to validate the abstraction
+3. **Decide pricing** (monthly subscription + 1-pack & 4-pack) — needed before billing integration (#7).
 
-4. **Load-test plan** (new in v3): validate the 100 → 10,000 MAU horizontal-scaling path before Phase 1 launch
+4. **Prototype Imagen 4 character consistency** before architecture is locked — still a blocker risk.
 
-5. **Project plan**
-   - Break Phase 0 → Phase 1 → Phase 2 → Phase 3 into milestones/sprints
-   - Identify dependencies (GCP/Vertex AI, Stripe, Jolly Phonics word lists, email provider, Web Push infra, Apple Developer + Google Play accounts for later phases)
+5. **Project plan** — break Phase 0 → 1 → 2 → 3 into milestones once design issues are resolved. Dependencies: GCP/Vertex AI, Stripe, Jolly Phonics word lists, email provider, Apple Developer + Google Play accounts (later phases).
 
-6. **Early prototype** (recommended before Phase 0 implementation): Imagen 4 character consistency via reference image — still a blocker risk
+6. **Push `main`** — local is 1 commit ahead of `origin/main` (the HLD commit).
+
+7. **Rotate the GitHub PAT** that was pasted in chat earlier today.
