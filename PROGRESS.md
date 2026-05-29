@@ -1,10 +1,27 @@
 # Progress Log
 
-**Last updated**: 2026-05-20 (HLD P0 + issues filed)
+**Last updated**: 2026-05-29 (GCP infra investigation doc added)
 
 ---
 
 ## What We've Done
+
+### GCP Infrastructure Investigation
+`doc/3_infra_investigation_gcp.md` committed as `392ccd0`. Captures:
+- **AWS → GCP mapping** for every infra concern (compute, storage, queue, DB, auth, IaC)
+- **Compute decisions:**
+  - Main server: **GKE Standard** (1× e2-medium for Phase 0; learning-driven choice; HA gap accepted for PoC, revisit before Phase 1)
+  - Story-generation worker: **Cloud Run Service + Pub/Sub push subscription** (concurrency=1, bounded max-instances)
+- **Region:** `us-east1` for Phase 0 (EU region deferred until GDPR-K traffic justifies it)
+- **Other picks:** Pub/Sub (queue), GCS (blob), Firebase Auth (<50k MAU free), Terraform (IaC), Go (general server), Python (LLM worker)
+- **DB direction:** Firestore pencilled in, but transactional credit ledger needs its own design doc — flagged as a follow-up
+- **Environments:** two-stage promotion — `gamma` (staging) → `prod`, separate GCP projects recommended
+- **Self-assessment (§9):** decisions worth re-examining (GKE 1-node HA, Firestore vs Cloud SQL, Go+Python overhead) and gaps vs HLD/PRD (CDN, LB config, session strategy, Vertex AI quota, Secret Manager, etc.)
+- **Cost model (§10):** under conservative **all-Apple revenue** assumption ($3.49 net/user after 30% IAP fee):
+  - Full GCP service breakdown — Phase 0 fixed cost **~$55/mo** across 18 line items; Phase 1+ **~$135–$200/mo** (HA, Cloud SQL, CDN added)
+  - Variable cost per user **~$1.50/mo** (dominated by Vertex AI)
+  - **Break-even: ~28–43 paying users for Phase 0**, ~101–155 at the 10k-MAU target
+  - 6-month PRD goal of 100 paying subscribers clears Phase 0 break-even with 2–3× headroom
 
 ### High-Level Design — P0 drafted
 `doc/2_HighLevelDesign_P0.md` committed as `e996e4a`. Captures:
@@ -41,21 +58,37 @@ v2 (prior, commit `2854319`) introduced: monthly auto-issued credits (4/mo, expi
 
 ## Next Steps
 
-1. **Work the P0 issues** (#4–#8) — each is a design task; deliverable is a design doc / decision recorded in the HLD.
+1. **Transaction system design doc** — credit / subscription / payment ledger needs its own design (idempotency keys, Pub/Sub at-least-once handling, ledger schema). Blocks final DB pick (Firestore vs Cloud SQL).
 
-2. **HLD gaps not in the TODO table** — consider filing follow-up issues for:
-   - Authentication mechanism (session vs JWT; must be stateless-compatible)
+2. **Work remaining P0 issues** (#4–#8):
+   - #4 Story Creation — partially covered by infra doc (queue + worker + blob storage decided); DB design still open pending the transaction doc above
+   - #5 Phonics Word DB — open
+   - #6 Notification (poll-based) — open
+   - #7 Payment integration — open; needs pricing decision first
+   - #8 Credits — folds into the transaction system design
+
+3. **Fill infra-doc gaps before build** (from §9.3):
+   - Cloud CDN in front of GCS
+   - Cloud Load Balancer config
+   - Session strategy (JWT vs shared store)
+   - Vertex AI / Imagen 4 quota request (lead time is days, not minutes)
+   - Stripe boundary, Web Push (VAPID + service worker)
+   - Secret Manager, billing budget alerts, CI/CD on Cloud Build
+   - Single GCP project vs separate `gamma`/`prod` projects (lean toward separate)
+
+4. **HLD gaps not in the TODO table** — consider filing follow-up issues for:
+   - Auth mechanism details (Firebase Auth picked; JWT vs session — still TBD, must be stateless-compatible)
    - Parent review UX + reject → free-regeneration loop (PRD v2 safety section)
    - Phase 0 exit thresholds (concrete numbers for generation success rate, latency)
    - Image-provider abstraction interface + named fallback provider
    - Load-test plan validating 100 → 10,000 MAU horizontal-scaling path
 
-3. **Decide pricing** (monthly subscription + 1-pack & 4-pack) — needed before billing integration (#7).
+5. **Decide pricing** (1-pack & 4-pack) — monthly is $4.99 (locked); pack prices still TBD. Needed before billing integration (#7).
 
-4. **Prototype Imagen 4 character consistency** before architecture is locked — still a blocker risk.
+6. **Prototype Imagen 4 character consistency** before architecture is locked — still a blocker risk.
 
-5. **Project plan** — break Phase 0 → 1 → 2 → 3 into milestones once design issues are resolved. Dependencies: GCP/Vertex AI, Stripe, Jolly Phonics word lists, email provider, Apple Developer + Google Play accounts (later phases).
+7. **Project plan** — break Phase 0 → 1 → 2 → 3 into milestones once design issues are resolved. Dependencies: GCP/Vertex AI, Stripe, Jolly Phonics word lists, email provider, Apple Developer + Google Play accounts (later phases).
 
-6. **Push `main`** — local is 1 commit ahead of `origin/main` (the HLD commit).
+8. **Push `main`** — local is 2 commits ahead of `origin/main` (HLD + infra investigation).
 
-7. **Rotate the GitHub PAT** that was pasted in chat earlier today.
+9. **Rotate the GitHub PAT** that was pasted in chat earlier today.
