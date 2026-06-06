@@ -1,6 +1,6 @@
 # Progress Log
 
-**Last updated**: 2026-05-29 (GCP infra investigation doc added)
+**Last updated**: 2026-06-06 (cost model split into its own doc; infra sections reordered)
 
 ---
 
@@ -16,12 +16,15 @@
 - **Other picks:** Pub/Sub (queue), GCS (blob), Firebase Auth (<50k MAU free), Terraform (IaC), Go (general server), Python (LLM worker)
 - **DB direction:** Firestore pencilled in, but transactional credit ledger needs its own design doc — flagged as a follow-up
 - **Environments:** two-stage promotion — `gamma` (staging) → `prod`, separate GCP projects recommended
-- **Self-assessment (§9):** decisions worth re-examining (GKE 1-node HA, Firestore vs Cloud SQL, Go+Python overhead) and gaps vs HLD/PRD (CDN, LB config, session strategy, Vertex AI quota, Secret Manager, etc.)
-- **Cost model (§10):** under conservative **all-Apple revenue** assumption ($3.49 net/user after 30% IAP fee):
-  - Full GCP service breakdown — Phase 0 fixed cost **~$55/mo** across 18 line items; Phase 1+ **~$135–$200/mo** (HA, Cloud SQL, CDN added)
-  - Variable cost per user **~$1.50/mo** (dominated by Vertex AI)
-  - **Break-even: ~28–43 paying users for Phase 0**, ~101–155 at the 10k-MAU target
-  - 6-month PRD goal of 100 paying subscribers clears Phase 0 break-even with 2–3× headroom
+- **Environments (§9):** two-stage promotion — `gamma` (staging) → `prod`, separate GCP projects recommended
+- **Self-assessment (§10):** decisions worth re-examining (GKE 1-node HA, Firestore vs Cloud SQL, Go+Python overhead) and gaps vs HLD/PRD (CDN, LB config, session strategy, Vertex AI quota, Secret Manager, etc.)
+
+### Cost Model — split into its own doc
+`doc/4_cost_model.md` extracted from the infra investigation (commit `c7bb274`, pushed). At the same time the infra doc's sections were reordered (Environments → §9, Assessment → §10). Cost model captures, under conservative **all-Apple revenue** assumption ($3.49 net/user after 30% IAP fee):
+- Full GCP service breakdown — Phase 0 fixed cost **~$55/mo** across 18 line items; Phase 1+ **~$135–$200/mo** (HA, Cloud SQL, CDN added)
+- Variable cost per user **~$1.50/mo** (dominated by Vertex AI)
+- **Break-even: ~28–43 paying users for Phase 0**, ~101–155 at the 10k-MAU target
+- 6-month PRD goal of 100 paying subscribers clears Phase 0 break-even with 2–3× headroom
 
 ### High-Level Design — P0 drafted
 `doc/2_HighLevelDesign_P0.md` committed as `e996e4a`. Captures:
@@ -67,7 +70,7 @@ v2 (prior, commit `2854319`) introduced: monthly auto-issued credits (4/mo, expi
    - #7 Payment integration — open; needs pricing decision first
    - #8 Credits — folds into the transaction system design
 
-3. **Fill infra-doc gaps before build** (from §9.3):
+3. **Fill infra-doc gaps before build** (from §10.3):
    - Cloud CDN in front of GCS
    - Cloud Load Balancer config
    - Session strategy (JWT vs shared store)
@@ -89,6 +92,4 @@ v2 (prior, commit `2854319`) introduced: monthly auto-issued credits (4/mo, expi
 
 7. **Project plan** — break Phase 0 → 1 → 2 → 3 into milestones once design issues are resolved. Dependencies: GCP/Vertex AI, Stripe, Jolly Phonics word lists, email provider, Apple Developer + Google Play accounts (later phases).
 
-8. **Push `main`** — local is 2 commits ahead of `origin/main` (HLD + infra investigation).
-
-9. **Rotate the GitHub PAT** that was pasted in chat earlier today.
+8. **Rotate the GitHub PAT** that was pasted in chat earlier today.
